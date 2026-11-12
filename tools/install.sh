@@ -155,8 +155,6 @@ main() {
         error "Supported so far: Debian/Ubuntu, Arch, Fedora-family."
     fi
 
-    check_python_version
-
     _skip_os_packages=false
     case "$FABRICATOR_SKIP_OS_PACKAGES" in
         1|true|TRUE|yes|YES|on|ON)
@@ -202,6 +200,11 @@ main() {
 
         info "Dependencies installed."
     fi
+
+    # Checked after the package step: minimal images (e.g. LXC/cloud Debian)
+    # ship without python3, and the installer is what installs it. Checking
+    # first made the one-liner fail on those hosts before apt could help.
+    check_python_version
 
     # Create service user if missing
     info "Ensuring service user '$SERVICE_USER' exists..."
