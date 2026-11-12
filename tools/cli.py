@@ -1,4 +1,4 @@
-"""Fabricator CLI — system-level commands for managing the Fabricator service."""
+"""Fabricator CLI - system-level commands for managing the Fabricator service."""
 import json
 import subprocess
 import sys
@@ -6,6 +6,19 @@ from pathlib import Path
 
 import click
 import requests
+
+# Update source. Imported from the app when run as the installed `fabricator`
+# entry point; falls back to the same default so a bare `python tools/cli.py`
+# still checks the fork's releases.
+try:
+    from backend.repo import get_github_repo
+except ImportError:  # pragma: no cover - CLI used without the app on sys.path
+    import os
+
+    def get_github_repo() -> str:
+        return (os.environ.get("FABRICATOR_REPO") or "").strip() or (
+            "TheDevfromDevshome/Fabricator"
+        )
 
 INSTALL_DIR = "/opt/fabricator"
 APP_DIR = f"{INSTALL_DIR}/app"
@@ -17,7 +30,9 @@ DATA_DIR = "/var/lib/fabricator"
 CONFIG_DIR = "/etc/fabricator"
 SERVICE_USER = "fabricator"
 API_BASE = "http://localhost:5000"
-GITHUB_API = "https://api.github.com/repos/philderks/Fabricator/releases?per_page=100"
+GITHUB_API = (
+    f"https://api.github.com/repos/{get_github_repo()}/releases?per_page=100"
+)
 
 
 def _systemctl(action: str) -> int:

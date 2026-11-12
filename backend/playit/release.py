@@ -20,7 +20,12 @@ import platform
 from typing import Optional
 
 # Bump together with every digest below.
-PLAYIT_VERSION = "v1.0.5"
+#
+# v1.2.0 is the minimum playit-agent release that supports NetherNet tunnels
+# (`tunnel_type: nethernet`), which the Bedrock-crossplay feature provisions.
+# Older pins still work for Java tunnels but the API rejects nethernet creates
+# with `AgentVersionTooOld`.
+PLAYIT_VERSION = "v1.2.0"
 
 _DOWNLOAD_BASE = (
     "https://github.com/playit-cloud/playit-agent/releases/download/{version}/{asset}"
@@ -36,14 +41,14 @@ BINARY_NAMES = (DAEMON_NAME, CLI_NAME)
 # the PLAYIT_SHA256 table in tools/install.sh (which stays the installer's copy
 # until that script is migrated onto `python -m backend.playit.provision`).
 SHA256: dict[str, str] = {
-    "playit-linux-amd64":       "217bd341b3ea88f982ce45bb68aa8b795bf8d6866be841cc675d36f3c6b90277",
-    "playit-linux-aarch64":     "7cfcf151581076295a210d56d2015a4b0b1ef26f4b3d4b753424c5d96eca6d95",
-    "playit-linux-armv7":       "140a8a2b49ee01d0562cd1a2c898dc641d640057c62cf6172724587cdf08828a",
-    "playit-linux-i686":        "c7b84d00aeb2735645230d5d9479a90a6bb2999f679d48613c91def30758580b",
-    "playit-cli-linux-amd64":   "1a3e6f2acfef345dafe32daa280ce4dc62e39601ff083bb5b88ea28ae7e5168c",
-    "playit-cli-linux-aarch64": "0b7a8d580727a1d2ff249ab96eab5233b7973720f6df245764016f4436d3ff70",
-    "playit-cli-linux-armv7":   "98855142ef50d49cb85b84b61531423ffac11bf78eafa250f43453e9e14cbe1e",
-    "playit-cli-linux-i686":    "571a4e22148e3c6c8a0d90ad3dbf4a7d43e18d1bd40e367cb755a5e355903775",
+    "playit-linux-amd64":       "602dea3288d5bad4c3addba70ecf6535b9ae085b8d4f2fc2fe9cde913bda78d0",
+    "playit-linux-aarch64":     "3a6d69c348803c7041c49312345c18b1e9cb7dd7fc2adfbf2217e50d0d7c9a34",
+    "playit-linux-armv7":       "d6314b5e83318bf0b8731aae95e81f499ed4338d30e5e8a8bf866cdebcf6e8e0",
+    "playit-linux-i686":        "14e8d468565a0fdba14af436280af960b6fe189b5bfade132d68134a196a6dbb",
+    "playit-cli-linux-amd64":   "a10cd77866bdd81837848ad08b6629012637f2662e7c0b7d9310bcdb619feebd",
+    "playit-cli-linux-aarch64": "d4cc2cd2e6f4bc9614a2b764eba60a5e0656d71ff8a2720a061e2333daef8940",
+    "playit-cli-linux-armv7":   "f5e8bb223d707e51b94a2a35dea038d02d6235295ef19f7bdabfedd39424c58d",
+    "playit-cli-linux-i686":    "34bf2c4ff47f70d5ae225c8e94866b53a88151f7c0c8ba0e0a57dc89d39696b0",
 }
 
 # platform.machine() -> playit asset arch suffix. Mirrors the `uname -m` case

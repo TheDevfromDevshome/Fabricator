@@ -34,6 +34,8 @@ from pathlib import Path
 from urllib import error, request
 import json
 
+from backend.repo import get_github_repo, raw_installer_url
+
 
 _TAG_CACHE_TTL = 15 * 60  # seconds
 _tag_cache: Dict[str, Any] = {"tag": None, "fetched_at": 0.0}
@@ -135,7 +137,7 @@ class UpdateService:
 
     def __init__(self) -> None:
         self._state_lock = threading.Lock()
-        self._repo = os.environ.get("FABRICATOR_REPO", "philderks/Fabricator")
+        self._repo = get_github_repo()
 
         self._mode = os.environ.get("FABRICATOR_UPDATE_MODE", "").strip().lower()
         if not self._mode and getattr(sys, "frozen", False) and sys.platform == "win32":
@@ -200,7 +202,7 @@ class UpdateService:
             "currentVersion": current_version,
             "latestVersion": latest,
             "updateAvailable": bool(latest and latest != current_version),
-            "updaterScript": "https://raw.githubusercontent.com/philderks/Fabricator/main/tools/install.sh",
+            "updaterScript": raw_installer_url(self._repo),
             **state,
         }
 
@@ -301,7 +303,7 @@ class UpdateService:
     def _run_update_dev(self, version: str) -> None:
         curl_updater = (
             "curl -fsSL "
-            "'https://raw.githubusercontent.com/philderks/Fabricator/main/tools/install.sh' "
+            f"'{raw_installer_url(self._repo)}' "
             "| bash -s -- --update"
         )
         cmd = ["/usr/bin/env", "bash", "-lc", curl_updater]

@@ -11,25 +11,25 @@ lightweight.
 
 ## Before you write code
 
-**Bugs.** [Open a bug report](https://github.com/philderks/Fabricator/issues/new?template=bug_report.yml).
+**Bugs.** [Open a bug report](https://github.com/TheDevfromDevshome/Fabricator/issues/new?template=bug_report.yml).
 If the fix is small and self-contained, feel free to open a PR alongside it.
 Keep it to one fix, and include a test where the bug is testable.
 
 **Changing something that already exists.** A unit that should be different, a
 confusing label, a wrong default, a value that's too coarse to be useful.
-[Open an improvement](https://github.com/philderks/Fabricator/issues/new?template=improvement.yml).
+[Open an improvement](https://github.com/TheDevfromDevshome/Fabricator/issues/new?template=improvement.yml).
 These are welcome, and small ones are still worth filing. If you already know
 what the change should be and it's contained, a PR alongside the issue is fine.
 
 **Adding something new.**
-[Open a feature request](https://github.com/philderks/Fabricator/issues/new?template=feature_request.yml)
+[Open a feature request](https://github.com/TheDevfromDevshome/Fabricator/issues/new?template=feature_request.yml)
 and wait for a reply before writing code. Describe the problem you're running
 into, not only the solution you have in mind. New capability gets weighed against
 the roadmap and the scope above, so an agreed issue first means you don't spend
 an evening on something we end up declining.
 
 **Refactors, directory restructures, build tooling, CI, packaging.**
-[Open an issue first](https://github.com/philderks/Fabricator/issues/new?template=refactor.yml),
+[Open an issue first](https://github.com/TheDevfromDevshome/Fabricator/issues/new?template=refactor.yml),
 always, and wait for agreement. Unsolicited restructuring pull requests are
 likely to be declined or only partially taken, however good the work is. This
 isn't about quality. Structural changes have consequences for the installer, the
@@ -38,7 +38,7 @@ aren't visible in the diff.
 
 **Security vulnerabilities.** Don't open a public issue or a pull request.
 Report privately via
-[GitHub Security Advisories](https://github.com/philderks/Fabricator/security/advisories/new)
+[GitHub Security Advisories](https://github.com/TheDevfromDevshome/Fabricator/security/advisories/new)
 or email contact@fabricator.site.
 
 **Documentation.** Open a PR directly. Typos, wrong commands, and stale

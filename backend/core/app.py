@@ -52,12 +52,18 @@ def create_app() -> Flask:
 
     CORS(app, origins=config.CORS_ORIGINS)
 
+    # Local import: backend.bedrock.service reaches the server installer, which
+    # imports backend.core. A module-level import here would close that cycle
+    # while backend.core is still initialising.
+    from backend.bedrock.routes import bedrock_bp
+
     app.register_blueprint(server_bp)
     app.register_blueprint(modrinth_bp)
     app.register_blueprint(system_bp)
     app.register_blueprint(backups_bp)
     app.register_blueprint(players_bp)
     app.register_blueprint(playit_bp)
+    app.register_blueprint(bedrock_bp)
     app.register_blueprint(integrations_bp)
     app.register_blueprint(schedules_bp)
 

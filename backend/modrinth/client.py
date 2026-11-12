@@ -64,7 +64,7 @@ class ModrinthClient:
     """Client for interacting with the Modrinth API."""
 
     BASE_URL = "https://api.modrinth.com/v2"
-    USER_AGENT = "philderks/Fabricator/1.0.0 (https://github.com/philderks/Fabricator)"
+    USER_AGENT = "TheDevfromDevshome/Fabricator/1.0.0 (+https://github.com/TheDevfromDevshome/Fabricator; fork of philderks/Fabricator)"
     MODPACK_SWITCH_PATHS = (
         # Replace only pack-managed content, not core server data.
         "mods",

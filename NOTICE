@@ -1,0 +1,49 @@
+Fabricator — Community Fork
+===========================
+
+This repository (https://github.com/TheDevfromDevshome/Fabricator) is a
+community fork of Fabricator:
+
+    Upstream:  https://github.com/philderks/Fabricator
+    Copyright (C) 2026 Philipp Noël Derks and Linus Sommermeyer
+
+Upstream Fabricator is licensed under the GNU Affero General Public License,
+version 3 (AGPL-3.0). This fork is distributed under the same license; the
+full text is in LICENSE and the original copyright notice is retained there.
+Nothing in this NOTICE narrows or replaces the terms of that license.
+
+Modifications in this fork
+--------------------------
+
+The fork tracks upstream `main` and adds:
+
+  * Bedrock/Geyser crossplay on top of Java servers (backend/bedrock/):
+      - one-click install of GeyserMC and Floodgate into a Java server's
+        plugins directory,
+      - automatic playit.gg NetherNet (UDP) tunnel provisioning through the
+        playit.gg API, so Bedrock clients can join without port-forwarding,
+      - patching of Geyser's config.yml (bedrock port, playit remote/local
+        address, Floodgate auth),
+      - panel UI to enable/disable crossplay and show the resulting
+        `<host>:19132` address (frontend/src/views/server/*,
+        frontend/src/stores/bedrock.js, frontend/src/api/bedrock.js).
+  * Self-updater and release tooling pointed at this fork
+    (backend/repo.py, backend/system/update_service.py, tools/cli.py,
+    tools/install.sh, .github/workflows/release.yml, docker-compose.yml).
+  * Removal of the upstream-only Cloudflare website deploy workflow.
+  * Docs for the crossplay feature and the fork's release process.
+
+All other code is upstream Fabricator, unmodified except where required to
+integrate the changes above. The complete corresponding source for every
+release of this fork is the tagged tree in this repository:
+
+    https://github.com/TheDevfromDevshome/Fabricator
+
+Because Fabricator is network server software, AGPL-3.0 section 13 applies:
+users interacting with a deployed instance are entitled to the source of the
+version being run. That is this repository at the deployed release tag.
+
+Upstream credits and the original project's documentation, website
+(https://fabricator.site) and community remain the canonical references for
+everything not specific to this fork. Please do not report fork-specific
+changes as upstream bugs.

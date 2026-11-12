@@ -7,15 +7,34 @@
 **Self-hosted web dashboard for managing Minecraft servers.**
 
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square)](LICENSE)
-[![Stars](https://img.shields.io/github/stars/philderks/Fabricator?style=flat-square)](https://github.com/philderks/Fabricator/stargazers)
-[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20Docker-lightgrey?style=flat-square)](https://github.com/philderks/Fabricator)
-[![Docker](https://img.shields.io/badge/ghcr.io-philderks%2Ffabricator-2496ED?style=flat-square&logo=docker&logoColor=white)](https://github.com/philderks/Fabricator/pkgs/container/fabricator)
+[![Stars](https://img.shields.io/github/stars/TheDevfromDevshome/Fabricator?style=flat-square)](https://github.com/TheDevfromDevshome/Fabricator/stargazers)
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20Docker-lightgrey?style=flat-square)](https://github.com/TheDevfromDevshome/Fabricator)
+[![Docker](https://img.shields.io/badge/ghcr.io-thedevfromdevshome%2Ffabricator-2496ED?style=flat-square&logo=docker&logoColor=white)](https://github.com/TheDevfromDevshome/Fabricator/pkgs/container/fabricator)
 
 [Website](https://fabricator.site/) | [Documentation](https://docs.fabricator.site/) | [MCP server for AI clients](mcp/README.md)
 
 </div>
 
+> [!IMPORTANT]
+> **This is a community fork.** It is based on
+> [philderks/Fabricator](https://github.com/philderks/Fabricator) by Philipp Noël
+> Derks and Linus Sommermeyer, and adds **Bedrock/Geyser crossplay** support.
+> Upstream is the original project — report upstream bugs there, and use
+> [this fork's issues](https://github.com/TheDevfromDevshome/Fabricator/issues)
+> for the crossplay changes.
+>
+> Releases, the self-updater, the Docker image and the one-line installer of
+> *this* repository all point at `TheDevfromDevshome/Fabricator`. The fork is
+> licensed under [AGPL-3.0](LICENSE) like upstream; see [NOTICE](NOTICE) for the
+> list of modifications. Source for every release is this repository.
+
 ---
+
+**What this fork adds:** an optional **Bedrock crossplay** toggle per server.
+Fabricator installs GeyserMC + Floodgate, provisions a [playit.gg](https://playit.gg)
+NetherNet UDP tunnel automatically, patches Geyser's `config.yml`, and shows the
+resulting `<host>:19132` address in the panel. Requires Linux (the playit agent is
+not supported on native Windows) and a playit.gg account connected in Fabricator.
 
 <div align="center">
   <img src="assets/screenshots/overview.png" alt="Fabricator dashboard — server overview" width="1280" />
@@ -93,7 +112,7 @@ non-root user and keeps all state on one `/data` volume.
 
 ```bash
 # Grab the compose file and start
-curl -fsSL https://raw.githubusercontent.com/philderks/Fabricator/main/docker-compose.yml -o docker-compose.yml
+curl -fsSL https://raw.githubusercontent.com/TheDevfromDevshome/Fabricator/main/docker-compose.yml -o docker-compose.yml
 docker compose up -d
 ```
 
@@ -114,7 +133,7 @@ Docker Desktop / WSL2).
 
 ### Windows (portable .exe)
 
-Every [release](https://github.com/philderks/Fabricator/releases) includes a portable
+Every [release](https://github.com/TheDevfromDevshome/Fabricator/releases) includes a portable
 `Fabricator-<version>.exe`. Download it and run it — no install needed. It opens the
 panel in your browser at `http://127.0.0.1:5000` and adds a tray icon with **Open in
 Browser**, **Open Data Folder**, and **Quit**. The panel listens on loopback only.
@@ -125,10 +144,10 @@ and verifies its checksum.
 
 ### One-line installer
 
-The script downloads a **release tarball** from [GitHub Releases](https://github.com/philderks/Fabricator/releases), installs dependencies, creates a `fabricator` user and systemd unit, and starts the app. Supported distros: Debian/Ubuntu (and derivatives), Arch, Fedora/RHEL family. **systemd** and **curl** are required.
+The script downloads a **release tarball** from [GitHub Releases](https://github.com/TheDevfromDevshome/Fabricator/releases), installs dependencies, creates a `fabricator` user and systemd unit, and starts the app. Supported distros: Debian/Ubuntu (and derivatives), Arch, Fedora/RHEL family. **systemd** and **curl** are required.
 
 ```bash
-curl -fsSL https://fabricator.site/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/TheDevfromDevshome/Fabricator/main/tools/install.sh | bash
 ```
 
 By default this installs the **latest** published release.
@@ -136,7 +155,7 @@ By default this installs the **latest** published release.
 **Updating.** The easiest way is from the panel itself: Fabricator checks GitHub Releases and you can update from the sidebar. You can also re-run the installer, which detects an existing install and updates in place (backing up `servers.json` and `fabricator.env`, keeping your data under `/var/lib/fabricator`):
 
 ```bash
-curl -fsSL https://fabricator.site/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/TheDevfromDevshome/Fabricator/main/tools/install.sh | bash
 ```
 
 Or update from the CLI:
@@ -154,7 +173,7 @@ For local development, the app defaults to loopback-only; see `.env.example`.
 
 ```bash
 # Clone
-git clone https://github.com/philderks/Fabricator.git
+git clone https://github.com/TheDevfromDevshome/Fabricator.git
 cd Fabricator
 
 # Backend
@@ -309,6 +328,33 @@ The read commands (`status`, `version`, `help`) accept `--json` for scripting. T
 ---
 
 > **A note on AI usage:** I use Claude while developing Fabricator. It lets me ship features and fixes faster than my free time would otherwise allow. I review and test every change myself before it is released, and backend tests run on every pull request. If you'd rather not run AI-assisted software, that's a fair choice, and I'd rather you know upfront.
+
+---
+
+## Fork maintenance & releases
+
+This fork is maintained independently. Releases are cut here, and the panel's
+self-updater, `fabricator update`, the one-line installer and the Docker image
+all read from this repository.
+
+* **Update source** — `backend/repo.py` (`DEFAULT_GITHUB_REPO`) and the
+  `GITHUB_OWNER`/`GITHUB_REPO` defaults in `tools/install.sh`. Override per
+  deployment with `FABRICATOR_REPO=owner/name`.
+* **Cutting a release** — create a GitHub Release in this repository with a
+  plain version tag (e.g. `v1.8.0`, not `mcp-v*`). `.github/workflows/release.yml`
+  then builds and attaches `fabricator-<tag>.tar.gz`, `Fabricator-<tag>.exe` and
+  publishes the multi-arch image to `ghcr.io/thedevfromdevshome/fabricator`.
+  Those asset names are what the updater downloads, so keep the tag format.
+* **Bumping the version** — the updater only offers an update when the newest
+  release tag differs from the installed `.fabricator_version`, so every batch
+  of changes needs a new tag.
+* **Syncing upstream** —
+  ```bash
+  git fetch upstream
+  git merge upstream/main   # or rebase the fork's commits onto upstream/main
+  ```
+  Fork-specific code is kept in `backend/bedrock/`, `backend/repo.py`, the
+  Bedrock routes/UI and the notes in `NOTICE`, which keeps merges small.
 
 ---
 

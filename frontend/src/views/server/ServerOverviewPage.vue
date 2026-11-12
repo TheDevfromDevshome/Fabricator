@@ -1,11 +1,12 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import StatCard from '../../components/ui/StatCard.vue'
 import Panel from '../../components/ui/Panel.vue'
 import AppButton from '../../components/ui/AppButton.vue'
 import { installedModDisplayName, installedModInitial } from '../../utils/installedModDisplay'
 import { useServerStore } from '../../stores/server'
 import { usePlayitStore } from '../../stores/playit'
+import { useBedrockStore } from '../../stores/bedrock'
 import { useAuthStore } from '../../stores/auth'
 import { usePreferencesStore } from '../../stores/preferences'
 import { copyToClipboard } from '../../utils/clipboard'
@@ -14,6 +15,7 @@ import { t } from '../../i18n'
 
 const store = useServerStore()
 const playit = usePlayitStore()
+const bedrock = useBedrockStore()
 const prefs = usePreferencesStore()
 const auth = useAuthStore()
 
@@ -111,6 +113,11 @@ const playitLive = computed(() =>
   Boolean(playitTunnel.value?.address && !playitTunnel.value?.disabled_reason)
 )
 
+// ─── Bedrock crossplay — Geyser address for this server ────────────────────
+// The setup toggle lives in Settings; here it is only the "connect with
+// Bedrock" row, shown once a tunnel address exists.
+const bedrockAddress = computed(() => (bedrock.enabled ? bedrock.address : null))
+
 // TPS is the number that says whether the server is keeping up — CPU% does not.
 // null whenever the runtime isn't reporting it (stopped, or not yet sampled).
 const tpsDisplay = computed(() => {
@@ -150,6 +157,7 @@ const localAddress = computed(() => {
 const copiedKey = ref('')
 let _copyTimeout = null
 let _unsubscribePlayit = null
+let _unsubscribeBedrock = null
 
 async function copyValue(key, value) {
   if (!value) return
@@ -166,12 +174,27 @@ async function copyValue(key, value) {
 onMounted(() => {
   if (auth.managed) return
   _unsubscribePlayit = playit.subscribe()
+  _unsubscribeBedrock = bedrock.subscribe()
 })
+
+// The sidebar switcher keeps this page mounted; follow the new server instead
+// of leaving the previous one's Bedrock address on screen.
+watch(
+  () => store.server?.id,
+  (id) => {
+    if (!auth.managed) bedrock.setServer(id)
+  },
+  { immediate: true }
+)
 
 onUnmounted(() => {
   if (_unsubscribePlayit) {
     _unsubscribePlayit()
     _unsubscribePlayit = null
+  }
+  if (_unsubscribeBedrock) {
+    _unsubscribeBedrock()
+    _unsubscribeBedrock = null
   }
   if (_copyTimeout) clearTimeout(_copyTimeout)
 })
@@ -339,6 +362,20 @@ onUnmounted(() => {
                   :aria-label="copiedKey === 'public' ? $t('common.copied') : $t('overview.copyPublicAddress')"
                   @click="copyValue('public', playitTunnel.address)"
                 >{{ copiedKey === 'public' ? $t('common.copied') : $t('common.copy') }}</button>
+              </dd>
+            </div>
+
+            <div v-if="bedrockAddress" class="overview-page__conn-row">
+              <dt class="overview-page__conn-label">{{ $t('overview.bedrock') }}</dt>
+              <dd class="overview-page__conn-value">
+                <code :title="bedrockAddress">{{ bedrockAddress }}</code>
+                <button
+                  type="button"
+                  class="overview-page__conn-copy"
+                  :class="{ 'is-confirmed': copiedKey === 'bedrock' }"
+                  :aria-label="copiedKey === 'bedrock' ? $t('common.copied') : $t('overview.copyBedrockAddress')"
+                  @click="copyValue('bedrock', bedrockAddress)"
+                >{{ copiedKey === 'bedrock' ? $t('common.copied') : $t('common.copy') }}</button>
               </dd>
             </div>
 

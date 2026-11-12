@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import AppButton from '../../components/ui/AppButton.vue'
 import FormField from '../../components/ui/FormField.vue'
 import MotdEditor from '../../components/ui/MotdEditor.vue'
@@ -7,6 +7,7 @@ import Panel from '../../components/ui/Panel.vue'
 import ToggleRow from '../../components/ui/ToggleRow.vue'
 import { useServerStore } from '../../stores/server'
 import { useAuthStore } from '../../stores/auth'
+import { useBedrockStore } from '../../stores/bedrock'
 import { deleteServerIcon, getInstalledJava, getJavaStatus, getJvmPresets, getLoaderGameVersions, getServerInstallProgress, saveJvmPresets, setServerIcon, upgradeServer } from '../../api/servers'
 import { useToast } from '../../composables/useToast'
 import { t } from '../../i18n'
@@ -15,6 +16,7 @@ import { BUILTIN_JVM_PRESETS } from '../../utils/jvmPresets'
 const store = useServerStore()
 const auth = useAuthStore()
 const toast = useToast()
+const bedrock = useBedrockStore()
 
 // Server icon (#85). Saved immediately rather than with the form: it's a file,
 // not a server.properties key. The img's own load/error says whether one exists.
@@ -358,6 +360,12 @@ function deletePreset() {
 }
 
 onMounted(async () => {
+  if (!auth.managed) {
+    // Kick the snapshot off without awaiting it so the Java/upgrade probes
+    // below are not queued behind a network round-trip.
+    bedrock.setServer(store.server?.id)
+    _unsubscribeBedrock = bedrock.subscribe()
+  }
   if (auth.managed) return
   await loadUpgradeVersions()
   try {
@@ -380,6 +388,22 @@ onMounted(async () => {
     autoJava.value = status?.meets_requirement ? status.detected_major : status?.install_major ?? null
   } catch {
     requiredJava.value = null
+  }
+})
+
+// Switching servers in the sidebar reuses this page; point the crossplay store
+// at the new one instead of showing the previous server's tunnel.
+watch(
+  () => store.server?.id,
+  (id) => {
+    if (!auth.managed) bedrock.setServer(id)
+  }
+)
+
+onUnmounted(() => {
+  if (_unsubscribeBedrock) {
+    _unsubscribeBedrock()
+    _unsubscribeBedrock = null
   }
 })
 
@@ -412,6 +436,34 @@ const onSave = () => {
 const onReset = () => {
   if (!store.canEditSettings) return
   store.resetSettings()
+}
+
+// ─── Bedrock crossplay ──────────────────────────────────────────────────────
+// Deliberately outside the settings form: the toggle writes plugins, patches
+// Geyser's config.yml and talks to playit.gg, so it acts on click instead of
+// riding Save/Reset like a server.properties value.
+let _unsubscribeBedrock = null
+
+const bedrockPhaseLabel = computed(() => {
+  const phase = bedrock.phase
+  if (!phase) return ''
+  if (phase === 'downloading' && bedrock.plugin) {
+    return t('properties.bedrock.phase.downloadingPlugin', {
+      plugin: bedrock.plugin,
+      version: bedrock.pluginVersion || ''
+    })
+  }
+  return t(`properties.bedrock.phase.${phase}`)
+})
+
+async function onBedrockToggle(next) {
+  const wanted = Boolean(next)
+  const ok = wanted ? await bedrock.enable() : await bedrock.disable()
+  if (ok) {
+    toast.info(t(wanted ? 'properties.bedrock.enabling' : 'properties.bedrock.disabling'))
+    return
+  }
+  toast.error(bedrock.errorMessage || t('properties.bedrock.requestFailed'), t('common.error'))
 }
 </script>
 
@@ -463,6 +515,67 @@ const onReset = () => {
         >
           {{ modeButtonLabel }}
         </button>
+      </div>
+    </Panel>
+
+    <Panel v-if="!auth.managed" :title="$t('properties.bedrock.title')">
+      <div class="settings-page__bedrock">
+        <ToggleRow
+          :model-value="bedrock.enabled"
+          :label="$t('properties.bedrock.toggle')"
+          :hint="$t('properties.bedrock.toggleHint')"
+          :disabled="!bedrock.canToggle || !store.canEditSettings"
+          @update:model-value="onBedrockToggle"
+        />
+
+        <p v-if="bedrock.active" class="settings-page__bedrock-note">
+          <span class="settings-page__bedrock-dot" aria-hidden="true"></span>
+          {{ bedrockPhaseLabel }}
+        </p>
+
+        <div
+          v-else-if="bedrock.errorMessage"
+          class="settings-page__bedrock-note settings-page__bedrock-note--error"
+        >
+          <span>{{ bedrock.errorMessage }}</span>
+          <button
+            v-if="bedrock.enabled"
+            type="button"
+            class="settings-page__bedrock-retry"
+            :disabled="!bedrock.canToggle"
+            @click="onBedrockToggle(true)"
+          >
+            {{ $t('properties.bedrock.retry') }}
+          </button>
+        </div>
+
+        <p v-else-if="bedrock.enabled && bedrock.address" class="settings-page__bedrock-note">
+          {{ $t('properties.bedrock.address') }}
+          <code class="settings-page__bedrock-address">{{ bedrock.address }}</code>
+        </p>
+
+        <p
+          v-else-if="!bedrock.supported && bedrock.reasonMessage"
+          class="settings-page__bedrock-note settings-page__bedrock-note--muted"
+        >
+          {{ bedrock.reasonMessage }}
+        </p>
+
+        <p v-else-if="bedrock.serverRunning" class="settings-page__bedrock-note settings-page__bedrock-note--muted">
+          {{ $t('properties.bedrock.stopToChange') }}
+        </p>
+
+        <p v-else-if="bedrock.enabled" class="settings-page__bedrock-note settings-page__bedrock-note--muted">
+          {{ $t('properties.bedrock.awaitingAddress') }}
+        </p>
+
+        <p v-else-if="!bedrock.playitReady" class="settings-page__bedrock-note settings-page__bedrock-note--muted">
+          {{ $t('properties.bedrock.playitOffline') }}
+        </p>
+
+        <p v-else class="settings-page__bedrock-note settings-page__bedrock-note--muted">
+          {{ $t('properties.bedrock.setupHint') }}
+        </p>
       </div>
     </Panel>
 
@@ -1960,6 +2073,77 @@ const onReset = () => {
   gap: var(--space-3);
   max-width: var(--settings-column);
   margin: 0 auto;
+}
+
+.settings-page__bedrock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.settings-page__bedrock-note {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
+}
+
+.settings-page__bedrock-note--muted {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.settings-page__bedrock-note--error {
+  color: var(--danger);
+  flex-wrap: wrap;
+}
+
+.settings-page__bedrock-address {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+/* Soft pulse while the worker runs — nothing else on the page moves, so the
+   panel itself should say "working" without a spinner component. */
+.settings-page__bedrock-dot {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--primary);
+  animation: settings-bedrock-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes settings-bedrock-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+.settings-page__bedrock-retry {
+  padding: 2px 8px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition: border-color 120ms ease, color 120ms ease;
+}
+
+.settings-page__bedrock-retry:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.settings-page__bedrock-retry:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .settings-page__danger {

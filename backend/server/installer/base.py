@@ -547,7 +547,7 @@ class InstallerBase(ABC):
     #: Sent on every upstream request an installer makes. One value for every
     #: loader — upstream operators identify Fabricator, not the loader.
     USER_AGENT = (
-        "philderks/Fabricator/1.0.0 (https://github.com/philderks/Fabricator)"
+        "TheDevfromDevshome/Fabricator/1.0.0 (+https://github.com/TheDevfromDevshome/Fabricator; fork of philderks/Fabricator)"
     )
 
     @staticmethod

@@ -1,6 +1,6 @@
 services:
   fabricator:
-    image: ghcr.io/philderks/fabricator:latest
+    image: ghcr.io/thedevfromdevshome/fabricator:latest
     # build: .            # uncomment for local builds
     container_name: fabricator
     restart: unless-stopped

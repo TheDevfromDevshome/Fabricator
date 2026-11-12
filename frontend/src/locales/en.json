@@ -506,6 +506,8 @@
     "port": "Port",
     "copyAddress": "Copy address",
     "copyPublicAddress": "Copy public address",
+    "bedrock": "Bedrock",
+    "copyBedrockAddress": "Copy Bedrock address",
     "noteWithTunnel": "Local works on your own network; public works from anywhere.",
     "noteLocalOnly": "Reachable on your network. For access from outside it, set up a tunnel on the playit.gg tab or forward the port on your router."
   },
@@ -1283,6 +1285,31 @@
       "done": "Server upgraded to {version}. Your pre-upgrade backup is ready to restore if needed.",
       "failed": "The server upgrade failed. Your pre-upgrade backup is available for restore.",
       "startFailed": "Could not start the server upgrade."
+    },
+    "bedrock": {
+      "title": "Bedrock crossplay",
+      "toggle": "Allow Bedrock players (crossplay)",
+      "toggleHint": "Installs Geyser and Floodgate, creates a playit.gg NetherNet tunnel and points Geyser at it. The server must be stopped.",
+      "address": "Bedrock address",
+      "awaitingAddress": "Crossplay is on, but playit.gg has not published the tunnel address yet. It appears once the tunnel is ready.",
+      "stopToChange": "Stop the server to change Bedrock crossplay.",
+      "playitOffline": "Start the playit.gg agent first — the NetherNet tunnel needs it.",
+      "setupHint": "Enabling installs Geyser and Floodgate and rewrites their config. The server must be stopped.",
+      "retry": "Retry",
+      "enabling": "Setting up Bedrock crossplay. This can take a few minutes.",
+      "disabling": "Turning off Bedrock crossplay…",
+      "requestFailed": "Could not change Bedrock crossplay.",
+      "phase": {
+        "starting": "Starting crossplay setup…",
+        "downloading": "Downloading plugins…",
+        "downloadingPlugin": "Downloading {plugin} {version}…",
+        "generating_config": "Starting the server once so Geyser writes its config…",
+        "creating_tunnel": "Creating the playit.gg NetherNet tunnel…",
+        "patching_config": "Writing Geyser's configuration…",
+        "deleting_tunnel": "Removing the playit.gg tunnel…",
+        "done": "Bedrock crossplay is ready.",
+        "failed": "Bedrock crossplay setup failed."
+      }
     },
     "mode": {
       "title": "Mode",

@@ -106,6 +106,16 @@ def test_update_available_reflects_version_gap(svc, monkeypatch):
     assert svc.get_status()["updateAvailable"] is False
 
 
+def test_updater_script_follows_configured_repo(monkeypatch):
+    """The dev-mode curl|bash URL must track FABRICATOR_REPO, not upstream."""
+    from backend.repo import raw_installer_url
+
+    monkeypatch.setenv("FABRICATOR_UPDATE_MODE", "dev")
+    monkeypatch.setenv("FABRICATOR_REPO", "someone/elsewhere")
+    assert UpdateService().get_status()["updaterScript"] == raw_installer_url()
+    assert "/someone/elsewhere/" in raw_installer_url()
+
+
 # --------------------------------------------------------------------------- #
 # Windows exe mode                                                            #
 # --------------------------------------------------------------------------- #

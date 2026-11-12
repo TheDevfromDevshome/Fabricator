@@ -63,6 +63,9 @@ jobs:
           # Root entrypoint + deps
           cp run.py requirements.txt pyproject.toml "$STAGING/"
 
+          # AGPL-3.0 compliance: ship the license + fork modification notice
+          cp LICENSE NOTICE "$STAGING/"
+
           # CLI + installer
           rsync -a --exclude='__pycache__/' --exclude='*.pyc' \
             tools/ "$STAGING/tools/"
@@ -168,7 +171,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/philderks/fabricator
+          images: ghcr.io/thedevfromdevshome/fabricator
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}

@@ -1404,7 +1404,7 @@ FABRICATOR_MANAGED=1             # managed-hosting mode: lock deployment-owned c
 FABRICATOR_MANAGED_MEMORY_GB=... # managed mode: pinned per-server JVM heap in whole GB; required when managed
 
 # Self-updater
-FABRICATOR_REPO=philderks/Fabricator
+FABRICATOR_REPO=TheDevfromDevshome/Fabricator
 FABRICATOR_UPDATE_MODE=...
 FABRICATOR_UPDATE_DIR=/var/lib/fabricator/update
 
@@ -1630,7 +1630,7 @@ commercially. The CLA Assistant bot records your acceptance once per GitHub acco
 
 ## Support
 
-- GitHub Issues: [Fabricator Issues](https://github.com/philderks/Fabricator/issues)
+- GitHub Issues: [Fabricator Issues](https://github.com/TheDevfromDevshome/Fabricator/issues)
 - Modrinth API docs: [docs.modrinth.com](https://docs.modrinth.com)
 
 ## MCP integration (API tokens)

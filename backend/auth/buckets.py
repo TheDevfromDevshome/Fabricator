@@ -114,6 +114,16 @@ _NEVER = [
     ("POST", "/api/playit/stop"),
     ("POST", "/api/playit/reset"),
     ("GET", "/api/playit/status"),
+    # Bedrock crossplay (Geyser/Floodgate + playit NetherNet). Setup downloads
+    # plugins, starts/stops the server and writes the Geyser config; teardown
+    # deletes the tunnel. Same class as the playit surface above and the
+    # settings PUT: UI-only until a dedicated MCP tool can present the
+    # start/stop + file-write contract. Status/progress are bundled in so the
+    # whole crossplay surface stays one bucket.
+    ("GET", "/api/servers/<server_id>/bedrock"),
+    ("GET", "/api/servers/<server_id>/bedrock/progress"),
+    ("POST", "/api/servers/<server_id>/bedrock/enable"),
+    ("POST", "/api/servers/<server_id>/bedrock/disable"),
     # backups: exfil / file-overwrite / destructive (snapshot delete included)
     ("GET", "/api/servers/<server_id>/snapshots/<snapshot_id>/download"),
     ("POST", "/api/servers/<server_id>/snapshots/<snapshot_id>/restore"),

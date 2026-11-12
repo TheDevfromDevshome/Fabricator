@@ -29,6 +29,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend/ ./backend/
 COPY run.py pyproject.toml ./
+# AGPL-3.0: the image is a distribution of this fork, so carry the license
+# text and the modification notice with it.
+COPY LICENSE NOTICE ./
 # tools/ (host installer + Windows spec-gen) is intentionally not copied.
 
 # playit.gg tunnel agent. install.sh installs these on native hosts, but it is
