@@ -20,13 +20,14 @@ The fork tracks upstream `main` and adds:
   * Bedrock/Geyser crossplay on top of Java servers (backend/bedrock/):
       - one-click install of GeyserMC and Floodgate into a Java server's
         plugins directory,
-      - automatic playit.gg NetherNet (UDP) tunnel provisioning through the
-        playit.gg API, so Bedrock clients can join without port-forwarding,
-      - patching of Geyser's config.yml (bedrock port, playit remote/local
-        address, Floodgate auth),
-      - panel UI to enable/disable crossplay and show the resulting
-        `<host>:19132` address (frontend/src/views/server/*,
-        frontend/src/stores/bedrock.js, frontend/src/api/bedrock.js).
+      - automatic playit.gg provisioning of two UDP tunnels per server —
+        NetherNet and RakNet — through the playit.gg API, so Bedrock clients
+        can join either way without port-forwarding,
+      - patching of Geyser's config.yml (both transports, per-transport ports,
+        NetherNet signaling token, Floodgate auth),
+      - panel UI to enable/disable crossplay and show both resulting addresses
+        (frontend/src/views/server/*, frontend/src/stores/bedrock.js,
+        frontend/src/api/bedrock.js).
   * Self-updater and release tooling pointed at this fork
     (backend/repo.py, backend/system/update_service.py, tools/cli.py,
     tools/install.sh, .github/workflows/release.yml, docker-compose.yml).

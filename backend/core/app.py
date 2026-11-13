@@ -1,4 +1,5 @@
 """Flask application factory and shared extensions."""
+import logging
 import os
 import sys
 from pathlib import Path
@@ -66,6 +67,16 @@ def create_app() -> Flask:
     app.register_blueprint(bedrock_bp)
     app.register_blueprint(integrations_bp)
     app.register_blueprint(schedules_bp)
+
+    # Bedrock crossplay depends on the local playit agent, and its own boot
+    # auto-start skips after a graceful shutdown (which persists "stopped on
+    # purpose"). Re-arm it when a server still has crossplay enabled. Best
+    # effort and non-blocking: agent.start() only spawns its worker thread.
+    try:
+        from backend.bedrock import service as bedrock_service
+        bedrock_service.resume_enabled_agents()
+    except Exception:  # pragma: no cover - startup must never fail for this
+        logging.getLogger(__name__).exception("bedrock agent re-arm failed")
 
     # One-time startup cleanup: flip stale 'installing'/'starting' statuses
     # left over from a previous run. Tolerates a missing/malformed index.

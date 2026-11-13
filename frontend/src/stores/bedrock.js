@@ -39,6 +39,12 @@ export const useBedrockStore = defineStore('bedrock', () => {
   const pluginVersion = computed(() => snapshot.value?.plugin_version ?? null)
   const errorMessage = computed(() => error.value || snapshot.value?.error || null)
   const address = computed(() => snapshot.value?.address ?? null)
+  const raknetAddress = computed(() => snapshot.value?.raknet_address ?? null)
+  // Both transports as [{type,label,address}] — empty until crossplay is on
+  // and playit has published at least one address.
+  const addresses = computed(() =>
+    Array.isArray(snapshot.value?.addresses) ? snapshot.value.addresses : []
+  )
   const reason = computed(() => snapshot.value?.reason ?? null)
   const reasonMessage = computed(() => snapshot.value?.reason_message ?? null)
   const serverRunning = computed(() => snapshot.value?.server_running === true)
@@ -163,8 +169,8 @@ export const useBedrockStore = defineStore('bedrock', () => {
     serverId, snapshot, error, busy,
     // getters
     supported, enabled, active, phase, plugin, pluginVersion, errorMessage,
-    address, reason, reasonMessage, serverRunning, playitStatus, playitReady,
-    clientPort, canToggle,
+    address, raknetAddress, addresses, reason, reasonMessage, serverRunning,
+    playitStatus, playitReady, clientPort, canToggle,
     // actions
     fetch, setServer, enable, disable, subscribe,
   }

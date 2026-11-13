@@ -8,8 +8,8 @@ that line, and append a missing block at the right place.
 
 The patcher is intentionally narrow. It understands the subset Geyser emits —
 mapping keys, scalar values, comments, blank lines — and leaves everything else
-(including inline comments) untouched. That is enough for the ten values the
-crossplay setup owns; it is not a general YAML library.
+(including inline comments) untouched. That is enough for the handful of values
+the crossplay setup owns; it is not a general YAML library.
 """
 from __future__ import annotations
 
@@ -26,9 +26,13 @@ _INDENT_UNIT = 2
 
 # Values written when crossplay is enabled. ``quote`` forces single quotes
 # around a token so YAML never mistakes a leading digit/symbol for a number.
+#
+# ``transport: both`` accepts NetherNet *and* RakNet, each on its own UDP port
+# (``bedrock.webrtc-port`` and ``bedrock.port``). That is what lets us serve one
+# tunnel of each type from the same Geyser instance.
 _ENABLE_VALUES: tuple[tuple[str, object, bool], ...] = (
     ("bedrock.address", "0.0.0.0", False),
-    ("bedrock.transport", "nethernet", False),
+    ("bedrock.transport", "both", False),
     ("bedrock.clone-remote-port", False, False),
     ("bedrock.signaling.mode", "nxs", False),
     ("bedrock.signaling.stun-discovery", False, False),
@@ -36,11 +40,12 @@ _ENABLE_VALUES: tuple[tuple[str, object, bool], ...] = (
     ("java.auth-type", "floodgate", False),
 )
 
-# Values restored when crossplay is disabled. The port and nxs endpoint are
-# left alone: both are harmless with builtin signaling, and the next enable
-# rewrites them anyway.
+# Values restored when crossplay is disabled. These are Geyser's own defaults:
+# NetherNet over built-in signaling. The ports and nxs endpoint are left alone:
+# they are harmless with builtin signaling and the next enable rewrites them.
 _DISABLE_VALUES: tuple[tuple[str, object, bool], ...] = (
-    ("bedrock.transport", "raknet", False),
+    ("bedrock.transport", "nethernet", False),
+    ("bedrock.webrtc-port", 0, False),
     ("bedrock.clone-remote-port", False, False),
     ("bedrock.signaling.mode", "builtin", False),
     ("bedrock.signaling.nxs.token", "", True),
@@ -62,20 +67,24 @@ def patch_geyser_config(
     path: str | Path,
     *,
     token: str,
-    bedrock_port: int,
+    raknet_port: int,
+    nether_port: int,
     endpoint: str = "https://nethernet.playit.gg",
 ) -> None:
-    """Point Geyser at a playit NetherNet tunnel.
+    """Serve both Bedrock transports through two playit.gg tunnels.
 
-    Writes the ten values playit's guide asks for (address/port/transport,
-    signaling mode + private token, Floodgate auth). The original file is
-    copied to ``config.yml.bedrock.bak`` before the first change, then the
-    result is re-read and verified so a partially-written edit can never be
-    reported as success.
+    ``transport: both`` makes Geyser listen twice: RakNet on ``bedrock.port``
+    (``raknet_port``) and NetherNet on ``bedrock.webrtc-port``
+    (``nether_port``). The NetherNet listener authenticates against playit's
+    signaling service with ``token``; the RakNet listener needs no token.
+
+    The original file is copied to ``config.yml.bedrock.bak`` before the first
+    change, then the result is re-read and verified so a partially-written edit
+    can never be reported as success.
     """
     values = (
-        ("bedrock.port", int(bedrock_port), False),
-        ("bedrock.webrtc-port", 0, False),
+        ("bedrock.port", int(raknet_port), False),
+        ("bedrock.webrtc-port", int(nether_port), False),
         ("bedrock.signaling.nxs.token", token, True),
         ("bedrock.signaling.nxs.endpoint", endpoint, False),
         *_ENABLE_VALUES,

@@ -1,19 +1,22 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import Panel from '../../components/ui/Panel.vue'
 import AppButton from '../../components/ui/AppButton.vue'
 import ConfirmModal from '../../components/modals/ConfirmModal.vue'
 import { useServerStore } from '../../stores/server'
 import { usePlayitStore } from '../../stores/playit'
+import { useBedrockStore } from '../../stores/bedrock'
 import { useAuthStore } from '../../stores/auth'
 import { copyToClipboard } from '../../utils/clipboard'
 import { t } from '../../i18n'
 
 const store = useServerStore()
 const playit = usePlayitStore()
+const bedrock = useBedrockStore()
 const auth = useAuthStore()
 
 let _unsubscribePlayit = null
+let _unsubscribeBedrock = null
 
 // Tunnels, account and agent approvals all live here. Surfaced persistently in
 // the panel header rather than only in the "no tunnel for this port" branch —
@@ -116,17 +119,50 @@ async function copyAddress() {
   _copyTimeout = setTimeout(() => { copied.value = false; _copyTimeout = null }, 2000)
 }
 
+// ─── Section C — Bedrock crossplay addresses (Geyser) ──────────────────────
+// NetherNet and RakNet are separate tunnels, so both get their own row. The
+// snackbar-style "Copied!" is tracked per transport.
+const copiedBedrock = ref('')
+let _bedrockCopyTimeout = null
+async function copyBedrockAddress(type, address) {
+  if (!address) return
+  const ok = await copyToClipboard(address)
+  if (!ok) return
+  copiedBedrock.value = type
+  if (_bedrockCopyTimeout) clearTimeout(_bedrockCopyTimeout)
+  _bedrockCopyTimeout = setTimeout(() => {
+    copiedBedrock.value = ''
+    _bedrockCopyTimeout = null
+  }, 2000)
+}
+
 onMounted(() => {
   if (auth.managed) return
   _unsubscribePlayit = playit.subscribe()
+  _unsubscribeBedrock = bedrock.subscribe()
 })
+
+// The sidebar switcher keeps this page mounted; follow the new server instead
+// of leaving the previous one's Bedrock addresses on screen.
+watch(
+  () => store.server?.id,
+  (id) => {
+    if (!auth.managed) bedrock.setServer(id)
+  },
+  { immediate: true }
+)
 
 onUnmounted(() => {
   if (_unsubscribePlayit) {
     _unsubscribePlayit()
     _unsubscribePlayit = null
   }
+  if (_unsubscribeBedrock) {
+    _unsubscribeBedrock()
+    _unsubscribeBedrock = null
+  }
   if (_copyTimeout) clearTimeout(_copyTimeout)
+  if (_bedrockCopyTimeout) clearTimeout(_bedrockCopyTimeout)
   // Resolve any open confirm so a pending promise doesn't dangle.
   if (_confirmResolver) { _confirmResolver(false); _confirmResolver = null }
 })
@@ -286,6 +322,36 @@ onUnmounted(() => {
 
       <!-- matched but no address yet (pending setup on playit's side) -->
       <p v-else class="pb-hint">{{ $t('playit.waitingForAddress', { port }) }}</p>
+    </Panel>
+
+    <!-- ─── Section C: Bedrock crossplay addresses ───────────────────────── -->
+    <!-- Shown whenever crossplay *could* run here; the Settings toggle owns
+         enabling it, this panel only answers "what do Bedrock players type?". -->
+    <Panel v-if="bedrock.supported || bedrock.enabled" :title="$t('playit.bedrockTitle')">
+      <p v-if="!bedrock.enabled" class="pb-hint">{{ $t('playit.bedrockOff') }}</p>
+
+      <p v-else-if="!bedrock.addresses.length" class="pb-hint">
+        {{ $t('playit.bedrockWaiting') }}
+      </p>
+
+      <div v-else class="pb-bedrock">
+        <div
+          v-for="entry in bedrock.addresses"
+          :key="entry.type"
+          class="pb-bedrock__row"
+        >
+          <span class="pb-bedrock__label">{{ entry.label }}</span>
+          <span class="pb-addr" :title="entry.address">{{ entry.address }}</span>
+          <button
+            class="pb-bedrock__copy"
+            :class="{ 'pb-bedrock__copy--confirmed': copiedBedrock === entry.type }"
+            type="button"
+            :aria-label="copiedBedrock === entry.type ? $t('playit.copied') : $t('playit.copyAddress')"
+            @click="copyBedrockAddress(entry.type, entry.address)"
+          >{{ copiedBedrock === entry.type ? $t('playit.copied') : $t('playit.copyAddress') }}</button>
+        </div>
+        <p class="pb-hint">{{ $t('playit.bedrockHint') }}</p>
+      </div>
     </Panel>
 
     <ConfirmModal
@@ -668,4 +734,45 @@ onUnmounted(() => {
 
 .pb-copy:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .pb-copy--confirmed { color: var(--success); }
+
+/* ─── Section C — Bedrock crossplay ─────────────────────────────────────── */
+.pb-bedrock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.pb-bedrock__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  width: 100%;
+}
+
+.pb-bedrock__label {
+  flex-shrink: 0;
+  min-width: 68px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pb-bedrock__copy {
+  flex-shrink: 0;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition: border-color 0.12s ease, color 0.12s ease;
+}
+
+.pb-bedrock__copy:hover { border-color: var(--primary); color: var(--primary); }
+.pb-bedrock__copy:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.pb-bedrock__copy--confirmed { border-color: var(--success); color: var(--success); }
 </style>

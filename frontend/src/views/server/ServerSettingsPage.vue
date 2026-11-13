@@ -549,10 +549,16 @@ async function onBedrockToggle(next) {
           </button>
         </div>
 
-        <p v-else-if="bedrock.enabled && bedrock.address" class="settings-page__bedrock-note">
-          {{ $t('properties.bedrock.address') }}
-          <code class="settings-page__bedrock-address">{{ bedrock.address }}</code>
-        </p>
+        <div v-else-if="bedrock.enabled && bedrock.addresses.length" class="settings-page__bedrock-addresses">
+          <p
+            v-for="entry in bedrock.addresses"
+            :key="entry.type"
+            class="settings-page__bedrock-note"
+          >
+            {{ $t('properties.bedrock.address') }} · {{ entry.label }}
+            <code class="settings-page__bedrock-address">{{ entry.address }}</code>
+          </p>
+        </div>
 
         <p
           v-else-if="!bedrock.supported && bedrock.reasonMessage"
@@ -2089,6 +2095,16 @@ async function onBedrockToggle(next) {
   font-size: var(--text-sm);
   color: var(--text-secondary);
   line-height: var(--leading-normal);
+}
+
+.settings-page__bedrock-addresses {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.settings-page__bedrock-addresses .settings-page__bedrock-note {
+  flex-wrap: wrap;
 }
 
 .settings-page__bedrock-note--muted {

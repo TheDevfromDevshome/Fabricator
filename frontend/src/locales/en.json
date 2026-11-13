@@ -507,6 +507,7 @@
     "copyAddress": "Copy address",
     "copyPublicAddress": "Copy public address",
     "bedrock": "Bedrock",
+    "bedrockTransport": "Bedrock ({transport})",
     "copyBedrockAddress": "Copy Bedrock address",
     "noteWithTunnel": "Local works on your own network; public works from anywhere.",
     "noteLocalOnly": "Reachable on your network. For access from outside it, set up a tunnel on the playit.gg tab or forward the port on your router."
@@ -1194,7 +1195,11 @@
     "tunnelDisabled": "This server's tunnel is disabled",
     "copied": "Copied!",
     "copyAddress": "Copy address",
-    "waitingForAddress": "Found a tunnel for port {port} — waiting for its public address…"
+    "waitingForAddress": "Found a tunnel for port {port} — waiting for its public address…",
+    "bedrockTitle": "This server's Bedrock address",
+    "bedrockOff": "Bedrock crossplay is off. Turn it on under the server's settings to let Bedrock players join.",
+    "bedrockWaiting": "Crossplay is on, but playit.gg has not published the Bedrock addresses yet. They appear automatically once the tunnels are ready.",
+    "bedrockHint": "Bedrock players can use either address. NetherNet is the newer connection method; RakNet is the classic one."
   },
   "java": {
     "title": "Java",
@@ -1289,12 +1294,12 @@
     "bedrock": {
       "title": "Bedrock crossplay",
       "toggle": "Allow Bedrock players (crossplay)",
-      "toggleHint": "Installs Geyser and Floodgate, creates a playit.gg NetherNet tunnel and points Geyser at it. The server must be stopped.",
+      "toggleHint": "Installs Geyser and Floodgate and creates two playit.gg tunnels — NetherNet and RakNet — so Bedrock players can use either address. The server must be stopped.",
       "address": "Bedrock address",
-      "awaitingAddress": "Crossplay is on, but playit.gg has not published the tunnel address yet. It appears once the tunnel is ready.",
+      "awaitingAddress": "Crossplay is on, but playit.gg has not published the tunnel addresses yet. They appear once the tunnels are ready.",
       "stopToChange": "Stop the server to change Bedrock crossplay.",
-      "playitOffline": "Start the playit.gg agent first — the NetherNet tunnel needs it.",
-      "setupHint": "Enabling installs Geyser and Floodgate and rewrites their config. The server must be stopped.",
+      "playitOffline": "Connect the playit.gg agent first — the Bedrock tunnels need it. Enabling crossplay brings it up automatically once it has been claimed.",
+      "setupHint": "Enabling installs Geyser and Floodgate, creates NetherNet and RakNet tunnels and rewrites their config. The server must be stopped.",
       "retry": "Retry",
       "enabling": "Setting up Bedrock crossplay. This can take a few minutes.",
       "disabling": "Turning off Bedrock crossplay…",
@@ -1304,9 +1309,9 @@
         "downloading": "Downloading plugins…",
         "downloadingPlugin": "Downloading {plugin} {version}…",
         "generating_config": "Starting the server once so Geyser writes its config…",
-        "creating_tunnel": "Creating the playit.gg NetherNet tunnel…",
+        "creating_tunnel": "Creating the playit.gg NetherNet and RakNet tunnels…",
         "patching_config": "Writing Geyser's configuration…",
-        "deleting_tunnel": "Removing the playit.gg tunnel…",
+        "deleting_tunnel": "Removing the playit.gg tunnels…",
         "done": "Bedrock crossplay is ready.",
         "failed": "Bedrock crossplay setup failed."
       }

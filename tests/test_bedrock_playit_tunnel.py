@@ -35,10 +35,10 @@ def _tunnel(
 ):
     return {
         "id": tunnel_id,
-        "tunnel_type": {"type": kind},
+        "tunnel_type": kind,
         "connect_addresses": addresses
         if addresses is not None
-        else [{"type": "auto", "address": "abc.playit.gg"}],
+        else [{"type": "auto", "value": {"address": "abc.playit.gg"}}],
         "nethernet_token": token,
         "origin": {
             "details": {
@@ -130,19 +130,31 @@ def test_create_tunnel_payload(monkeypatch):
 
     monkeypatch.setattr(playit_tunnel, "_post", _fake_post)
 
-    tunnel_id = playit_tunnel.create_tunnel(SECRET, 19140, name="bedrock-srv_1")
+    tunnel_id = playit_tunnel.create_tunnel(
+        SECRET, 19140, name="bedrock-raknet-srv_1", tunnel_type=playit_tunnel.RAKNET,
+        agent_id="agent-1",
+    )
 
     assert tunnel_id == "t-42"
     assert captured["path"] == "/v1/tunnels/create"
     payload = captured["payload"]
-    assert payload["ports"] == {"type": "tunnel-type", "details": "nethernet"}
+    # playit's web UI schema: protocol/origin/endpoint. An older ports/alloc
+    # body is rejected with HTTP 400.
+    assert payload["protocol"] == {
+        "type": "tunnel-type", "details": "minecraft-bedrock",
+    }
+    assert payload["endpoint"] == {
+        "type": "region", "details": {"region": "global", "port": None},
+    }
     assert payload["enabled"] is True
-    assert payload["name"] == "bedrock-srv_1"
-    fields = payload["origin"]["data"]["config"]["fields"]
+    assert payload["name"] == "bedrock-raknet-srv_1"
+    origin = payload["origin"]
+    assert origin["type"] == "agent"
+    assert origin["data"]["agent_id"] == "agent-1"
+    fields = origin["data"]["config"]["fields"]
     assert {"name": "local_ip", "value": "127.0.0.1"} in fields
     # local_port travels as a string.
     assert {"name": "local_port", "value": "19140"} in fields
-    assert {"name": "proxy_protocol", "value": "false"} in fields
 
 
 def test_create_tunnel_requires_an_id(monkeypatch):
@@ -150,7 +162,28 @@ def test_create_tunnel_requires_an_id(monkeypatch):
         playit_tunnel, "_post", lambda *a, **k: {"status": "success", "data": {}}
     )
     with pytest.raises(playit_tunnel.PlayitTunnelError, match="no tunnel id"):
-        playit_tunnel.create_tunnel(SECRET, 19140)
+        playit_tunnel.create_tunnel(SECRET, 19140, agent_id="agent-1")
+
+
+def test_get_agent_id_prefers_rundata(monkeypatch):
+    def _fake_post(path, payload, secret, timeout=15):
+        assert path == "/v1/agents/rundata"
+        return {"status": "success", "data": {"agent_id": "agent-7"}}
+
+    monkeypatch.setattr(playit_tunnel, "_post", _fake_post)
+    assert playit_tunnel.get_agent_id(SECRET) == "agent-7"
+
+
+def test_get_agent_id_falls_back_to_the_tunnel_list(monkeypatch):
+    def _fake_post(path, payload, secret, timeout=15):
+        raise playit_tunnel.PlayitTunnelError("nope")
+
+    monkeypatch.setattr(playit_tunnel, "_post", _fake_post)
+    monkeypatch.setattr(playit_tunnel, "list_tunnels", lambda secret: [{
+        "id": "t1",
+        "origin": {"type": "agent", "details": {"agent_id": "agent-from-list"}},
+    }])
+    assert playit_tunnel.get_agent_id(SECRET) == "agent-from-list"
 
 
 @pytest.mark.parametrize("body", [
@@ -217,10 +250,10 @@ def test_find_tunnel_reads_rundata_agent_config():
     assert playit_tunnel.find_tunnel([tunnel], 19140)["id"] == "t1"
 
 
-# ── ensure_tunnel ───────────────────────────────────────────────────────────
+# ── ensure_tunnels ──────────────────────────────────────────────────────────
 
 def test_ensure_tunnel_reuses_an_existing_tunnel(monkeypatch):
-    existing = _tunnel("t1", token="tok")
+    existing = _tunnel("t1", port=19141, token="tok")
     monkeypatch.setattr(playit_tunnel, "list_tunnels", lambda secret: [existing])
 
     def _must_not_create(*a, **k):
@@ -228,14 +261,14 @@ def test_ensure_tunnel_reuses_an_existing_tunnel(monkeypatch):
 
     monkeypatch.setattr(playit_tunnel, "create_tunnel", _must_not_create)
 
-    result = playit_tunnel.ensure_tunnel(SECRET, 19140)
+    result = playit_tunnel.ensure_tunnel(SECRET, 19141)
 
-    assert result == {
-        "tunnel_id": "t1",
-        "token": "tok",
-        "host": "abc.playit.gg",
-        "created": False,
-    }
+    assert result["tunnel_id"] == "t1"
+    assert result["token"] == "tok"
+    assert result["host"] == "abc.playit.gg"
+    assert result["address"] == "abc.playit.gg:19132"
+    assert result["created"] is False
+    assert result["ready"] is True
 
 
 def test_ensure_tunnel_polls_until_the_token_arrives(monkeypatch):
@@ -247,34 +280,105 @@ def test_ensure_tunnel_polls_until_the_token_arrives(monkeypatch):
         return responses.pop(0) if responses else [with_token]
 
     monkeypatch.setattr(playit_tunnel, "list_tunnels", _list)
+    monkeypatch.setattr(playit_tunnel, "get_agent_id", lambda *a, **k: "agent-1")
     monkeypatch.setattr(playit_tunnel, "create_tunnel", lambda *a, **k: "t-new")
     monkeypatch.setattr(playit_tunnel.time, "sleep", lambda seconds: None)
 
-    result = playit_tunnel.ensure_tunnel(SECRET, 19140, token_timeout=5.0, poll_interval=0.01)
+    result = playit_tunnel.ensure_tunnel(SECRET, 19140, timeout=5.0, poll_interval=0.01)
 
     assert result["created"] is True
     assert result["tunnel_id"] == "t-new"
     assert result["token"] == "tok-9"
+    assert result["ready"] is True
 
 
 def test_ensure_tunnel_keeps_the_id_when_no_token_is_issued(monkeypatch):
     monkeypatch.setattr(playit_tunnel, "list_tunnels", lambda secret: [])
+    monkeypatch.setattr(playit_tunnel, "get_agent_id", lambda *a, **k: "agent-1")
     monkeypatch.setattr(playit_tunnel, "create_tunnel", lambda *a, **k: "t-new")
 
-    result = playit_tunnel.ensure_tunnel(SECRET, 19140, token_timeout=0.0)
+    result = playit_tunnel.ensure_tunnel(SECRET, 19140, timeout=0.0)
 
     assert result["tunnel_id"] == "t-new"
     assert result["token"] is None
     assert result["created"] is True
+    assert result["ready"] is False
 
 
-# ── connect_host ────────────────────────────────────────────────────────────
+def test_ensure_tunnels_creates_one_of_each_type(monkeypatch):
+    created = []
+
+    def _create(secret, local_port, *, tunnel_type, agent_id=None, **kwargs):
+        created.append((tunnel_type, local_port))
+        return f"id-{tunnel_type}"
+
+    listing = [
+        _tunnel(
+            "id-nethernet", port=19141, token="tok",
+            addresses=[{"type": "auto", "value": {"address": "net.playit.gg"}}],
+        ),
+        _tunnel(
+            "id-minecraft-bedrock", port=19140, kind=playit_tunnel.RAKNET,
+            addresses=[{"type": "auto", "value": {"address": "rak.playit.gg", "port": 45678}}],
+        ),
+    ]
+    monkeypatch.setattr(playit_tunnel, "list_tunnels", lambda secret: [] if not created else listing)
+    monkeypatch.setattr(playit_tunnel, "get_agent_id", lambda secret, tunnels=None: "agent-1")
+    monkeypatch.setattr(playit_tunnel, "create_tunnel", _create)
+    monkeypatch.setattr(playit_tunnel.time, "sleep", lambda seconds: None)
+
+    results = playit_tunnel.ensure_tunnels(
+        SECRET,
+        {playit_tunnel.NETHERNET: 19141, playit_tunnel.RAKNET: 19140},
+        timeout=5.0,
+        poll_interval=0.01,
+    )
+
+    assert sorted(created) == [
+        (playit_tunnel.RAKNET, 19140),
+        (playit_tunnel.NETHERNET, 19141),
+    ]
+    assert results[playit_tunnel.NETHERNET]["address"] == "net.playit.gg:19132"
+    assert results[playit_tunnel.NETHERNET]["token"] == "tok"
+    assert results[playit_tunnel.RAKNET]["address"] == "rak.playit.gg:45678"
+    assert results[playit_tunnel.RAKNET]["ready"] is True
+
+
+# ── connect_address / connect_host ─────────────────────────────────────────
+
+def test_connect_address_forces_19132_for_nethernet():
+    tunnel = _tunnel(addresses=[
+        {"type": "auto", "value": {"address": "funny-name.playit.gg", "port": 51234}},
+    ])
+    assert playit_tunnel.connect_address(tunnel) == "funny-name.playit.gg:19132"
+
+
+def test_connect_address_keeps_the_allocated_port_for_raknet():
+    tunnel = _tunnel(
+        kind=playit_tunnel.RAKNET,
+        addresses=[{"type": "auto", "value": {"address": "rak.playit.gg", "port": 45678}}],
+    )
+    assert playit_tunnel.connect_address(tunnel, playit_tunnel.RAKNET) == "rak.playit.gg:45678"
+
+
+def test_connect_address_uses_public_allocations_while_pending():
+    tunnel = {
+        "id": "t1",
+        "public_allocations": [{
+            "type": "PortAllocation",
+            "details": {"auto_domain": "pending.playit.gg", "port": 45678},
+        }],
+    }
+    assert playit_tunnel.connect_address(
+        tunnel, playit_tunnel.RAKNET
+    ) == "pending.playit.gg:45678"
+
 
 def test_connect_host_prefers_domain_over_raw_address():
     tunnel = _tunnel(
         addresses=[
-            {"type": "addr4", "address": "203.0.113.5"},
-            {"type": "domain", "address": "funny-name.playit.gg:19132"},
+            {"type": "addr4", "value": {"address": "203.0.113.5"}},
+            {"type": "domain", "value": {"address": "funny-name.playit.gg:19132"}},
         ]
     )
     assert playit_tunnel.connect_host(tunnel) == "funny-name.playit.gg"
@@ -286,7 +390,7 @@ def test_connect_host_falls_back_to_display_address():
 
 
 def test_connect_host_handles_ipv6():
-    tunnel = _tunnel(addresses=[{"type": "addr6", "address": "[2001:db8::1]:19132"}])
+    tunnel = _tunnel(addresses=[{"type": "addr6", "value": {"address": "[2001:db8::1]:19132"}}])
     assert playit_tunnel.connect_host(tunnel) == "2001:db8::1"
 
 

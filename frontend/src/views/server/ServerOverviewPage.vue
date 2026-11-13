@@ -113,10 +113,10 @@ const playitLive = computed(() =>
   Boolean(playitTunnel.value?.address && !playitTunnel.value?.disabled_reason)
 )
 
-// ─── Bedrock crossplay — Geyser address for this server ────────────────────
+// ─── Bedrock crossplay — Geyser addresses for this server ──────────────────
 // The setup toggle lives in Settings; here it is only the "connect with
-// Bedrock" row, shown once a tunnel address exists.
-const bedrockAddress = computed(() => (bedrock.enabled ? bedrock.address : null))
+// Bedrock" rows, shown once playit has published the tunnel addresses.
+const bedrockAddresses = computed(() => (bedrock.enabled ? bedrock.addresses : []))
 
 // TPS is the number that says whether the server is keeping up — CPU% does not.
 // null whenever the runtime isn't reporting it (stopped, or not yet sampled).
@@ -365,17 +365,23 @@ onUnmounted(() => {
               </dd>
             </div>
 
-            <div v-if="bedrockAddress" class="overview-page__conn-row">
-              <dt class="overview-page__conn-label">{{ $t('overview.bedrock') }}</dt>
+            <div
+              v-for="entry in bedrockAddresses"
+              :key="entry.type"
+              class="overview-page__conn-row"
+            >
+              <dt class="overview-page__conn-label">
+                {{ $t('overview.bedrockTransport', { transport: entry.label }) }}
+              </dt>
               <dd class="overview-page__conn-value">
-                <code :title="bedrockAddress">{{ bedrockAddress }}</code>
+                <code :title="entry.address">{{ entry.address }}</code>
                 <button
                   type="button"
                   class="overview-page__conn-copy"
-                  :class="{ 'is-confirmed': copiedKey === 'bedrock' }"
-                  :aria-label="copiedKey === 'bedrock' ? $t('common.copied') : $t('overview.copyBedrockAddress')"
-                  @click="copyValue('bedrock', bedrockAddress)"
-                >{{ copiedKey === 'bedrock' ? $t('common.copied') : $t('common.copy') }}</button>
+                  :class="{ 'is-confirmed': copiedKey === `bedrock-${entry.type}` }"
+                  :aria-label="copiedKey === `bedrock-${entry.type}` ? $t('common.copied') : $t('overview.copyBedrockAddress')"
+                  @click="copyValue(`bedrock-${entry.type}`, entry.address)"
+                >{{ copiedKey === `bedrock-${entry.type}` ? $t('common.copied') : $t('common.copy') }}</button>
               </dd>
             </div>
 

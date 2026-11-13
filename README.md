@@ -31,10 +31,11 @@
 ---
 
 **What this fork adds:** an optional **Bedrock crossplay** toggle per server.
-Fabricator installs GeyserMC + Floodgate, provisions a [playit.gg](https://playit.gg)
-NetherNet UDP tunnel automatically, patches Geyser's `config.yml`, and shows the
-resulting `<host>:19132` address in the panel. Requires Linux (the playit agent is
-not supported on native Windows) and a playit.gg account connected in Fabricator.
+Fabricator installs GeyserMC + Floodgate, provisions two [playit.gg](https://playit.gg)
+UDP tunnels — **NetherNet** and **RakNet** — patches Geyser's `config.yml` for both
+transports, and shows the resulting addresses in the panel (Bedrock players can
+use either one). Requires Linux (the playit agent is not supported on native
+Windows) and a playit.gg account connected in Fabricator.
 
 <div align="center">
   <img src="assets/screenshots/overview.png" alt="Fabricator dashboard — server overview" width="1280" />
